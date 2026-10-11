@@ -3,19 +3,20 @@ import { useCallback, useEffect, useState } from "react";
 import "./App.css";
 import AdminDashboard from "./AdminDashboard";
 
-const API = "http://localhost:8081/api";
+const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:8081/api";
 
 async function readResponse(response, fallbackMessage) {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(
+    const errorMsg =
       data.detail ||
-        data.message ||
-        data.error ||
-        fallbackMessage ||
-        `Request failed (${response.status})`
-    );
+      data.message ||
+      (data.error && data.error !== "Bad Request" ? data.error : null) ||
+      fallbackMessage ||
+      `Request failed (${response.status})`;
+
+    throw new Error(errorMsg);
   }
 
   return data;
@@ -382,6 +383,36 @@ function App() {
       return;
     }
 
+    if (online) {
+      const pincode = (workAreaForm.pincode || "").trim();
+      const city = (workAreaForm.city || "").trim();
+
+      if (!pincode || !/^\d{6}$/.test(pincode)) {
+        showMessage(
+          "Please enter your work city and a valid 6-digit pincode in the 'Where do you want to work?' section below, then save it before going online.",
+          "error"
+        );
+        const section = document.getElementById("work-area-section");
+        if (section) section.scrollIntoView({ behavior: "smooth" });
+        return;
+      }
+
+      // If city and pincode are typed, auto-save the work area first
+      if (city && pincode) {
+        try {
+          await fetch(`${API}/workers/${user.workerId}/work-area`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ city, pincode }),
+          });
+        } catch {
+          // Continue to availability attempt
+        }
+      }
+    }
+
     setLoading(true);
     showMessage("");
 
@@ -400,7 +431,7 @@ function App() {
       const data = await readResponse(
         response,
         online
-          ? "Could not go online."
+          ? "Could not go online. Please ensure your work city and 6-digit pincode are saved below."
           : "Could not go offline."
       );
 
@@ -411,7 +442,7 @@ function App() {
       showMessage(
         data.message ||
           (online
-            ? "You are now online."
+            ? "You are now online and ready to receive requests."
             : "You are now offline."),
         "success"
       );
@@ -948,7 +979,7 @@ function App() {
             </div>
           )}
 
-          <section className="surface form-surface" style={{ marginBottom: 24 }}>
+          <section id="work-area-section" className="surface form-surface" style={{ marginBottom: 24 }}>
             <div className="surface-heading">
               <span className="heading-icon">⌖</span>
               <div>
