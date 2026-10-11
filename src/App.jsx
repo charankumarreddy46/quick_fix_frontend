@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import "./App.css";
 import AdminDashboard from "./AdminDashboard";
 
-const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:8081/api";
+const API = import.meta.env.VITE_API_BASE_URL || "https://quick-fix-backend-1.onrender.com/api";
 
 async function readResponse(response, fallbackMessage) {
   const data = await response.json().catch(() => ({}));

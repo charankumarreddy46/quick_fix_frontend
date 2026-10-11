@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 
-const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:8081/api";
+const API = import.meta.env.VITE_API_BASE_URL || "https://quick-fix-backend-1.onrender.com/api";
 
 function AdminDashboard({ user, onLogout }) {
   const [dashboard, setDashboard] = useState(null);
